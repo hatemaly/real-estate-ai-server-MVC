@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.database.session import db_session
+from app.routers import auth_router
 from app.routers.conversation_router import router as conversation_router
 from app.routers.user_router import router as user_router
 from app.routers.property_router import router as property_router
@@ -22,6 +23,11 @@ async def startup_event():
 async def shutdown_event():
     await db_session.disconnect()
 
+
+
+
+app.include_router(user_router.router, prefix="/users", tags=["users"])
+app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 # Include routers
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(property_router, prefix="/properties", tags=["Properties"])
