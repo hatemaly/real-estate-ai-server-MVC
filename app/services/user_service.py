@@ -23,8 +23,10 @@ class UserService:
         print(user_id , " from service \n\n")
         return await self.repository.get_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_users_by_email(self, email: str) -> Optional[User]:
         return await self.repository.get_by_email(email)
+
+
 
     async def get_users_by_role(self, role: str, skip: int = 0, limit: int = 50) -> List[User]:
         return await self.repository.get_users_by_role(role, skip, limit)
