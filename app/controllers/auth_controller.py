@@ -1,36 +1,75 @@
 from fastapi import HTTPException
 from app.services.auth_service import AuthService
-from app.models.auth_models import Token
-from app.models.user_models.user import User, Email, UserRole, Language
+from app.models.auth_models import (
+    Token, UserRegisterRequest, UserLoginRequest,
+    SocialLoginRequest, VerifyEmailRequest,
+    ResendVerificationRequest, ForgotPasswordRequest,
+    ResetPasswordRequest
+)
+from app.models.user_models.user import User, Language, Email, UserRole
 
 
 class AuthController:
     def __init__(self, auth_service: AuthService):
         self.auth_service = auth_service
 
-    async def google_login(self, token: str) -> Token:
+    async def register(self, request: UserRegisterRequest) -> Token:
         try:
-            user_data = await self.auth_service.verify_google_token(token)
+            user = await self.auth_service.register_user(request)
+            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email.address})
+            return Token(access_token=access_token, refresh_token=refresh_token)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
-            # Check if user exists or create new user
+    async def login(self, request: UserLoginRequest) -> Token:
+        try:
+            user = await self.auth_service.login_user(request.email, request.password)
+            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email.address})
+            return Token(access_token=access_token, refresh_token=refresh_token)
+        except ValueError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+
+    async def social_login(self, request: SocialLoginRequest) -> Token:
+        try:
+            if request.provider == "google":
+                user_data = await self.auth_service.verify_google_token(request.token)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported provider")
+
             email = user_data.get("email")
-            existing_users = await self.auth_service.user_service.get_users_by_email(email)
+            user = await self.auth_service.user_service.get_by_email(email)
 
-            if not existing_users:
-                # Create new user
-                new_user = User(
+            if not user:
+                user = User(
                     email=Email(address=email, is_verified=True),
                     full_name=user_data.get("name", ""),
                     role=UserRole.USER,
                     language=Language.EN
                 )
-                await self.auth_service.user_service.create_user(new_user)
+                await self.auth_service.user_service.create_user(user)
 
-            # Create access token
-            access_token = await self.auth_service.create_access_token(
-                {"sub": email}
-            )
-            return Token(access_token=access_token)
-
+            access_token, refresh_token = await self.auth_service.create_access_token({"sub": email})
+            return Token(access_token=access_token, refresh_token=refresh_token)
         except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    async def verify_email(self, request: VerifyEmailRequest) -> dict:
+        success = await self.auth_service.verify_email(request.code)
+        if not success:
+            raise HTTPException(status_code=400, detail="Invalid code")
+        return {"success": True}
+
+    async def resend_verification(self, request: ResendVerificationRequest) -> dict:
+        await self.auth_service.resend_verification(request.email)
+        return {"success": True}
+
+    async def forgot_password(self, request: ForgotPasswordRequest) -> dict:
+        await self.auth_service.forgot_password(request.email)
+        return {"success": True}
+
+    async def reset_password(self, request: ResetPasswordRequest) -> dict:
+        try:
+            await self.auth_service.reset_password(request.token, request.new_password)
+            return {"success": True}
+        except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))

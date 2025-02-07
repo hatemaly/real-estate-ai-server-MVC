@@ -1,29 +1,58 @@
-# src/repositories/user_repository.py
+from datetime import datetime
 from pymongo.collection import Collection
 from typing import List, Optional
 from app.models.user_models.user import User
 from app.repositories.base_repository import BaseRepository
-
 
 class UserRepository(BaseRepository):
     def __init__(self, collection: Collection):
         super().__init__(collection, User)
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        document = await self.collection.find_one({"email": email})
-        if document:
-            return self.model(**document)
-        return None
+        document = await self.collection.find_one({"email.address": email})
+        return User(**document) if document else None
 
-    async def get_users_by_role(self, role: str, skip: int = 0, limit: int = 50) -> List[User]:
-        cursor = self.collection.find({"role": role}).skip(skip).limit(limit)
-        documents = await cursor.to_list(length=limit)
-        return [self.model(**doc) for doc in documents]
+    async def get_by_verification_code(self, code: str) -> Optional[User]:
+        document = await self.collection.find_one({"verification_code": code})
+        return User(**document) if document else None
 
-    async def get_users_ids_by_role(self, role: str) -> List[str]:
-        cursor = self.collection.find({"role": role}, {"_id": 1})
-        return [doc["_id"] for doc in await cursor.to_list(length=None)]
+    async def verify_email(self, email: str, code: str) -> bool:
+        result = await self.collection.update_one(
+            {"email.address": email, "verification_code": code},
+            {"$set": {"email.is_verified": True}, "$unset": {"verification_code": ""}}
+        )
+        return result.modified_count > 0
 
-    async def get_user_role_by_id(self, user_id: str) -> Optional[str]:
-        document = await self.collection.find_one({"_id": user_id}, {"role": 1})
-        return document["role"] if document else None
+    async def update_verification_code(self, email: str, code: str) -> None:
+        await self.collection.update_one(
+            {"email.address": email},
+            {"$set": {"verification_code": code}}
+        )
+
+    async def update_reset_token(self, email: str, token: str, expiry: datetime) -> None:
+        await self.collection.update_one(
+            {"email.address": email},
+            {"$set": {"reset_token": token, "reset_token_expiry": expiry}}
+        )
+
+    async def get_by_reset_token(self, token: str) -> Optional[User]:
+        document = await self.collection.find_one({"reset_token": token})
+        return User(**document) if document else None
+
+    async def update_password(self, email: str, password_hash: str) -> None:
+        await self.collection.update_one(
+            {"email.address": email},
+            {"$set": {"password_hash": password_hash}, "$unset": {"reset_token": "", "reset_token_expiry": ""}}
+        )
+
+    async def add_favorite(self, user_id: str, property_id: str) -> None:
+        await self.collection.update_one(
+            {"_id": user_id},
+            {"$addToSet": {"favorites": property_id}}  # $addToSet يضيف فقط إن لم يكن موجودًا
+        )
+
+    async def remove_favorite(self, user_id: str, property_id: str) -> None:
+        await self.collection.update_one(
+            {"_id": user_id},
+            {"$pull": {"favorites": property_id}}  # $pull يحذف العنصر إن وُجد
+        )

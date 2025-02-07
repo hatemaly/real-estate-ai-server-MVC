@@ -1,6 +1,8 @@
+from typing import List, Optional
 from pydantic import BaseModel, Field, EmailStr
-from typing import Optional
 from enum import Enum
+from datetime import datetime
+
 from app.models.user_models.user_preferences import UserPreferences
 
 
@@ -26,17 +28,22 @@ class Phone(BaseModel):
 
 
 class User(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # MongoDB's primary key
+    id: Optional[str] = Field(None, alias="_id")
     email: Email
+    password_hash: Optional[str] = None
     full_name: str
-    role: UserRole
-    language: Language
     phone: Optional[Phone] = None
-    preferences: Optional[UserPreferences] = None  # Explicitly linked preferences
+    role: UserRole = UserRole.USER
+    language: Language = Language.EN
+    verification_code: Optional[str] = None
+    reset_token: Optional[str] = None
+    reset_token_expiry: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    preferences: Optional[UserPreferences] = None
+
+    favorites: List[str] = Field(default_factory=list)
 
     class Config:
         arbitrary_types_allowed = True
-
-
-UserPreferences.model_rebuild()
-User.model_rebuild()

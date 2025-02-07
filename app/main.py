@@ -25,9 +25,7 @@ async def shutdown_event():
 
 
 
-
-app.include_router(user_router.router, prefix="/users", tags=["users"])
-app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(auth_router.router)
 # Include routers
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(property_router, prefix="/properties", tags=["Properties"])
