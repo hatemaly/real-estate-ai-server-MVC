@@ -1,13 +1,14 @@
 # src/models/property_models/price.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
+
+from app.models.base_model import BaseModelApp
 from app.models.property_models.payment_plan import PaymentPlan
 
 
-class Price(BaseModel):
-    id: Optional[str] = None  # MongoDB or UUID
+class Price(BaseModelApp):
     amount: Decimal
     currency: str = "EGP"
     price_per_sqm: Optional[float] = None

@@ -1,8 +1,10 @@
 # src/models/developer_models/project.py
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from datetime import datetime
 from enum import Enum
+
+from app.models.base_model import BaseModelApp
 
 
 # Enums
@@ -45,11 +47,11 @@ class UnitType(str, Enum):
 
 
 # Value Objects
-class BackendProjectInfo(BaseModel):
+class BackendProjectInfo(BaseModelApp):
     broker_employee_ids: List[str] = Field(default_factory=list)
 
 
-class BasicProjectInfo(BaseModel):
+class BasicProjectInfo(BaseModelApp):
     name: str
     logo_url: Optional[str] = None
     description: Optional[str] = None
@@ -62,7 +64,7 @@ class BasicProjectInfo(BaseModel):
     developer_ids: List[str] = Field(default_factory=list)
 
 
-class DetailedProjectInfo(BaseModel):
+class DetailedProjectInfo(BaseModelApp):
     full_description: Optional[str] = None
     completion_date: Optional[datetime] = None
     available_units_count: Optional[int] = None
@@ -77,8 +79,7 @@ class DetailedProjectInfo(BaseModel):
 
 
 # Project Entity
-class Project(BaseModel):
-    id: Optional[str] = None  # MongoDB or UUID
+class Project(BaseModelApp):
     basic_info: BasicProjectInfo
     detailed_info: Optional[DetailedProjectInfo] = None
     backend_info: Optional[BackendProjectInfo] = None

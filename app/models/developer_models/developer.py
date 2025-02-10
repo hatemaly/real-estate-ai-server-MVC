@@ -1,13 +1,14 @@
 # app/models/developer_models/developer.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import Optional, List
+
+from app.models.base_model import BaseModelApp
 from app.models.developer_models.basic_info import DeveloperBasicInfo
 from app.models.developer_models.detailed_info import DeveloperDetailedInfo
 from app.models.developer_models.backend_info import DeveloperBackendInfo
 
 
-class Developer(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # MongoDB primary key
+class Developer(BaseModelApp):
     basic_info: DeveloperBasicInfo
     detailed_info: Optional[DeveloperDetailedInfo] = None
     backend_info: Optional[DeveloperBackendInfo] = None

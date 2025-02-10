@@ -1,8 +1,9 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import  Field, EmailStr
 from enum import Enum
 from datetime import datetime
 
+from app.models.base_model import BaseModelApp
 from app.models.user_models.user_preferences import UserPreferences
 
 
@@ -17,18 +18,17 @@ class Language(str, Enum):
     AR = "ar"
 
 
-class Email(BaseModel):
+class Email(BaseModelApp):
     address: EmailStr
     is_verified: bool = False
 
 
-class Phone(BaseModel):
+class Phone(BaseModelApp):
     number: str
     is_verified: bool = False
 
 
-class User(BaseModel):
-    id: Optional[str] = Field(None, alias="_id")
+class User(BaseModelApp):
     email: Email
     password_hash: Optional[str] = None
     full_name: str
@@ -38,10 +38,8 @@ class User(BaseModel):
     verification_code: Optional[str] = None
     reset_token: Optional[str] = None
     reset_token_expiry: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    preferences: Optional[UserPreferences] = None
+    # Here we changed the preferences field to a list of UserPreferences
+    # preferences: List[UserPreferences] = Field(default_factory=list)
 
     favorites: List[str] = Field(default_factory=list)
 

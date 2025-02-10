@@ -81,7 +81,6 @@ class UserService:
         }
 
     async def add_favorite(self, user_id: str, property_id: str) -> None:
-        # يمكن التحقق أولًا من صلاحية property_id أو وجوده
         # مثال: await self.property_repository.get_by_id(property_id)
         await self.repository.add_favorite(user_id, property_id)
 

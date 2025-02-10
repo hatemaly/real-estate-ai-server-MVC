@@ -1,8 +1,10 @@
 # src/models/property_models/payment_plan.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import List, Optional
 from enum import Enum
 from decimal import Decimal
+
+from app.models.base_model import BaseModelApp
 
 
 class InstallmentType(str, Enum):
@@ -11,8 +13,7 @@ class InstallmentType(str, Enum):
     YEARLY = "yearly"
 
 
-class SpecialPayment(BaseModel):
-    id: Optional[str] = None  # MongoDB or UUID
+class SpecialPayment(BaseModelApp):
     name: str
     event_month: Optional[int] = None  # Month number of the payment
     amount: Optional[Decimal] = None
@@ -20,7 +21,7 @@ class SpecialPayment(BaseModel):
     description: Optional[str] = None
 
 
-class PaymentPlan(BaseModel):
+class PaymentPlan(BaseModelApp):
     id: Optional[str] = None  # MongoDB or UUID
     name: str
     description: Optional[str] = None

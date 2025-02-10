@@ -1,8 +1,10 @@
 # src/models/location_models/location.py
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import List, Optional
+
+from app.models.base_model import BaseModelApp
 
 
 class LocationType(str, Enum):
@@ -16,13 +18,12 @@ class LocationType(str, Enum):
     OTHER = "other"
 
 
-class Coordinates(BaseModel):
+class Coordinates(BaseModelApp):
     latitude: float
     longitude: float
 
 
-class Location(BaseModel):
-    id: Optional[str] = None
+class Location(BaseModelApp):
     name: str
     location_type: LocationType
     parent_ids: List[str] = Field(default_factory=list)

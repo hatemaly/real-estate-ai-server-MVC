@@ -1,7 +1,8 @@
 # src/models/developer_models/base_data.py
-from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
+
+from app.models.base_model import BaseModelApp
 
 
 class ProjectStatus(str, Enum):
@@ -25,12 +26,12 @@ class PartnerStatus(str, Enum):
     INACTIVE = "inactive"
 
 
-class ProjectWithStatus(BaseModel):
+class ProjectWithStatus(BaseModelApp):
     project_name: str
     status: ProjectStatus
 
 
-class ContactInfo(BaseModel):
+class ContactInfo(BaseModelApp):
     person: str
     email: str
     phone: str

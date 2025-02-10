@@ -1,8 +1,10 @@
 # src/models/conversation_models/conversation.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from datetime import datetime
 from typing import List, Optional
 from enum import Enum
+
+from app.models.base_model import BaseModelApp
 
 
 # Enums
@@ -18,13 +20,13 @@ class ConversationStatus(str, Enum):
 
 
 # Value Objects
-class Response(BaseModel):
+class Response(BaseModelApp):
     content: str
     related_property_ids: List[str] = Field(default_factory=list)
     role: Role = Role.ASSISTANT
 
 
-class Message(BaseModel):
+class Message(BaseModelApp):
     number: Optional[int] = None
     content: str
     timestamp: datetime
@@ -33,8 +35,7 @@ class Message(BaseModel):
 
 
 # Main Entity
-class Conversation(BaseModel):
-    id: Optional[str] = Field(alias="_id")
+class Conversation(BaseModelApp):
     user_id: str
     title: str = Field(default="New Conversation")
     status: ConversationStatus = ConversationStatus.ACTIVE

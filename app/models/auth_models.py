@@ -1,14 +1,17 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import  EmailStr
 from typing import Optional
 from datetime import datetime
 from enum import Enum
 
-class Token(BaseModel):
+from app.models.base_model import BaseModelApp
+
+
+class Token(BaseModelApp):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
-class TokenData(BaseModel):
+class TokenData(BaseModelApp):
     email: Optional[str] = None
 
 class SocialProvider(str, Enum):
@@ -16,34 +19,34 @@ class SocialProvider(str, Enum):
     FACEBOOK = "facebook"
     APPLE = "apple"
 
-class UserRegisterRequest(BaseModel):
+class UserRegisterRequest(BaseModelApp):
     email: EmailStr
     password: str
     full_name: str
     phone: 'PhoneRequest'
     language: 'Language'
 
-class UserLoginRequest(BaseModel):
+class UserLoginRequest(BaseModelApp):
     email: EmailStr
     password: str
 
-class SocialLoginRequest(BaseModel):
+class SocialLoginRequest(BaseModelApp):
     provider: SocialProvider
     token: str
 
-class VerifyEmailRequest(BaseModel):
+class VerifyEmailRequest(BaseModelApp):
     code: str
 
-class ResendVerificationRequest(BaseModel):
+class ResendVerificationRequest(BaseModelApp):
     email: EmailStr
 
-class ForgotPasswordRequest(BaseModel):
+class ForgotPasswordRequest(BaseModelApp):
     email: EmailStr
 
-class ResetPasswordRequest(BaseModel):
+class ResetPasswordRequest(BaseModelApp):
     token: str
     new_password: str
 
-class PhoneRequest(BaseModel):
+class PhoneRequest(BaseModelApp):
     number: str
     country_code: str

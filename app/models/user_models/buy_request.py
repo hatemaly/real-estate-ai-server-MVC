@@ -1,8 +1,10 @@
 # src/models/user_models/buy_request.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+
+from app.models.base_model import BaseModelApp
 
 
 class RequestStatus(str, Enum):
@@ -13,8 +15,7 @@ class RequestStatus(str, Enum):
     CHANGED = "changed"
 
 
-class BuyRequest(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # MongoDB's primary key
+class BuyRequest(BaseModelApp):
     property_id: List[str] = Field(default_factory=list)
     broker_id: Optional[str] = None
     status: RequestStatus = RequestStatus.PENDING

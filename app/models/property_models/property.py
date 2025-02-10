@@ -1,7 +1,9 @@
 # src/models/property_models/property.py
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import List, Optional
 from datetime import datetime
+
+from app.models.base_model import BaseModelApp
 from app.models.property_models.price import Price
 from enum import Enum
 
@@ -24,8 +26,7 @@ class FinishingType(str, Enum):
     UNFINISHED = "unfinished"
 
 
-class Property(BaseModel):
-    id: Optional[str] = None  # MongoDB or UUID
+class Property(BaseModelApp):
     title: str
     description: Optional[str] = None
     location_ids: List[str] = Field(default_factory=list)

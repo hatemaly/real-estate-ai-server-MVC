@@ -1,21 +1,20 @@
 # app/models/user_models/appointment_request.py
 
-from pydantic import BaseModel, Field
+from pydantic import  Field
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
+from app.models.base_model import BaseModelApp
 from app.models.user_models.buy_request import RequestStatus
 
 
 class AppointmentType(str, Enum):
-    VISIT = "visit"
-    CALL = "call"
-    MEETING = "meeting"
+    BUY = "Buy"
+    INSPECTION = "Inspection"
 
 
-class AppointmentRequest(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # MongoDB's primary key
+class AppointmentRequest(BaseModelApp):
 
     customer_id: Optional[str] = None
 

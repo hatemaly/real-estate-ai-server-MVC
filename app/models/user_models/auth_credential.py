@@ -1,8 +1,10 @@
 # src/models/user_models/auth_credential.py
-from pydantic import BaseModel
+
 from typing import Optional
 from datetime import datetime
 from enum import Enum
+
+from app.models.base_model import BaseModelApp
 
 
 class AuthProvider(str, Enum):
@@ -12,7 +14,7 @@ class AuthProvider(str, Enum):
     MICROSOFT = "microsoft"
 
 
-class AuthInfo(BaseModel):
+class AuthInfo(BaseModelApp):
     provider: AuthProvider
     provider_user_id: Optional[str] = None
     phone: Optional[str] = None
@@ -22,8 +24,7 @@ class AuthInfo(BaseModel):
     is_primary: bool = False
 
 
-class AuthCredential(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # MongoDB's primary key
+class AuthCredential(BaseModelApp):
     auth_info: AuthInfo
     revoked: bool = False
     revoked_at: Optional[datetime] = None
