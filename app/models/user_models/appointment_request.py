@@ -16,8 +16,6 @@ class AppointmentType(str, Enum):
 
 class AppointmentRequest(BaseModelApp):
 
-    customer_id: Optional[str] = None
-
     property_id: List[str] = Field(default_factory=list)
     broker_id: Optional[str] = None
 
