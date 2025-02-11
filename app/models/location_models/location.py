@@ -25,8 +25,10 @@ class Coordinates(BaseModelApp):
 
 class Location(BaseModelApp):
     name: str
-    location_type: LocationType
+    other_names: List[str] = Field(default_factory=list)
+    location_type: List[LocationType] = Field(default_factory=list)
     parent_ids: List[str] = Field(default_factory=list)
     coordinates: Optional[Coordinates] = None
     average_price_m2: Optional[float] = None
     gallery_urls: List[str] = Field(default_factory=list)
+
