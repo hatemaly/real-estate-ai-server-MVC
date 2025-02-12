@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 
 from app.models.base_model import BaseModelApp
-from app.models.user_models.buy_request import RequestStatus
+from app.models.user_models.object_values import RequestStatus
 
 
 class AppointmentType(str, Enum):

@@ -2,6 +2,12 @@
 from enum import Enum
 from pydantic import BaseModel, EmailStr
 
+class RequestStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
 
 
 class UserRole(str, Enum):
