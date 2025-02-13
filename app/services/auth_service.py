@@ -1,36 +1,24 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Optional
-import httpx
-from passlib.context import CryptContext
 import random
 import string
-
 from app.models.auth_models import UserRegisterRequest
-from app.models.user_models.user import User, Email, UserRole, Language
+from app.models.user_models.user import User, UserRole
 from app.services.email_service import EmailService
 from app.services.user_service import UserService
 from app.config import settings
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 class AuthService:
     def __init__(self, user_service: UserService, email_service: EmailService):
         self.user_service = user_service
         self.email_service = email_service
 
-    async def verify_google_token(self, token: str) -> dict:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                headers={"Authorization": f"Bearer {token}"}
-            )
-            if response.status_code != 200:
-                raise ValueError("Invalid Google token")
-            return response.json()
-
     async def create_access_token(self, data: dict) -> tuple[str, str]:
+        """Generate access and refresh tokens"""
         access_exp = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         refresh_exp = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
@@ -44,8 +32,9 @@ class AuthService:
 
         return access_token, refresh_token
 
-    async def register_user(self, user_data: UserRegisterRequest) -> User:
-        existing_user = await self.user_service.get_by_email(user_data.email)
+    async def register_user(self, user_data: UserRegisterRequest) -> dict:
+        """Register a new user and send email verification"""
+        existing_user = await self.user_service.get_user_by_email(user_data.email)
         if existing_user:
             raise ValueError("Email already registered")
 
@@ -53,7 +42,7 @@ class AuthService:
         verification_code = ''.join(random.choices(string.digits, k=6))
 
         user = User(
-            email=Email(address=user_data.email, is_verified=False),
+            email=user_data.email,
             password_hash=hashed_pwd,
             full_name=user_data.full_name,
             phone=user_data.phone,
@@ -61,42 +50,75 @@ class AuthService:
             verification_code=verification_code
         )
         await self.user_service.create_user(user)
-        await self._send_verification_email(user.email.address, verification_code)
-        return user
+        await self.email_service.send_verification_email(user.email, verification_code)
 
-    async def login_user(self, email: str, password: str) -> User:
-        user = await self.user_service.get_by_email(email)
+        access_token, refresh_token = await self.create_access_token({"user_id": user.id, "role": user.role})
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "phone": user.phone,
+                "language": user.language,
+                "role": user.role,
+                "is_verified": user.is_verified
+            }
+        }
+
+    async def login_user(self, email: str, password: str) -> dict:
+        """Authenticate user with email and password"""
+        user = await self.user_service.get_user_by_email(email)
         if not user or not pwd_context.verify(password, user.password_hash):
             raise ValueError("Invalid credentials")
-        if not user.email.is_verified:
+        if not user.is_verified:
             raise ValueError("Email not verified")
-        return user
 
-    async def verify_email(self, code: str) -> bool:
-        return await self.user_service.verify_email(code)
+        access_token, refresh_token = await self.create_access_token({"user_id": user.id, "role": user.role})
 
-    async def resend_verification(self, email: str) -> None:
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "phone": user.phone,
+                "language": user.language,
+                "role": user.role,
+                "is_verified": user.is_verified
+            }
+        }
+
+    async def verify_email(self, code: str) -> dict:
+        """Verify email using code"""
+        success = await self.user_service.verify_email(code)
+        return {"success": success}
+
+    async def resend_verification(self, email: str) -> dict:
+        """Resend email verification code"""
         code = ''.join(random.choices(string.digits, k=6))
         await self.user_service.update_verification_code(email, code)
-        await self._send_verification_email(email, code)
+        await self.email_service.send_verification_email(email, code)
+        return {"success": True}
 
-    async def forgot_password(self, email: str) -> None:
-        user = await self.user_service.get_by_email(email)
+    async def forgot_password(self, email: str) -> dict:
+        """Send password reset link"""
+        user = await self.user_service.get_user_by_email(email)
         if user:
             token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
             expiry = datetime.utcnow() + timedelta(hours=1)
             await self.user_service.update_reset_token(email, token, expiry)
-            await self._send_password_reset_email(email, token)
+            await self.email_service.send_password_reset_email(email, token)
+        return {"success": True}
 
-    async def reset_password(self, token: str, new_password: str) -> None:
-        user = await self.user_service.get_by_reset_token(token)
+    async def reset_password(self, token: str, new_password: str) -> dict:
+        """Reset user password using reset token"""
+        user = await self.user_service.get_user_by_reset_token(token)
         if not user or user.reset_token_expiry < datetime.utcnow():
             raise ValueError("Invalid or expired token")
         hashed_pwd = pwd_context.hash(new_password)
-        await self.user_service.update_password(user.email.address, hashed_pwd)
-
-    async def _send_verification_email(self, email: str, code: str):
-        await self.email_service.send_verification_email(email, code)
-
-    async def _send_password_reset_email(self, email: str, token: str):
-        await self.email_service.send_password_reset_email(email, token)
+        await self.user_service.update_password(user.email, hashed_pwd)
+        return {"success": True}

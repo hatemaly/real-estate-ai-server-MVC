@@ -16,16 +16,13 @@ class BaseRepository(ABC, Generic[T, ID]):
         self.model = model
 
     async def save(self, aggregate: BaseModel) -> None:
-        """Save a document to the MongoDB collection."""
         document = aggregate.dict(by_alias=True)
         await self.collection.insert_one(document)
 
     async def delete(self, aggregate_id: str) -> None:
-        """Delete a document by ID."""
         await self.collection.delete_one({"_id": aggregate_id})
 
     async def update(self, aggregate: BaseModel) -> None:
-        """Update a document by ID."""
         document = aggregate.dict(by_alias=True)
         await self.collection.replace_one({"_id": aggregate.id}, document)
 
@@ -39,9 +36,7 @@ class BaseRepository(ABC, Generic[T, ID]):
         return None
 
     async def activate(self, aggregate_id: str) -> None:
-        """Activate a document by ID."""
         await self.collection.update_one({"_id": aggregate_id}, {"$set": {"is_active": True}})
 
     async def deactivate(self, aggregate_id: str) -> None:
-        """Deactivate a document by ID."""
         await self.collection.update_one({"_id": aggregate_id}, {"$set": {"is_active": False}})

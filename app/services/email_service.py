@@ -4,24 +4,28 @@ from app.config import settings
 from fastapi import HTTPException
 
 class EmailService:
-    async def send_verification_email(self, email: str, code: str):
+    async def send_email(self, email: str, subject: str, html_content: str):
+        """General function to send emails"""
         message = Mail(
             from_email=settings.EMAIL_FROM,
             to_emails=email,
-            subject="Email Verification",
-            html_content=f"Your verification code is: <strong>{code}</strong>")
+            subject=subject,
+            html_content=html_content)
         await self._send_email(message)
+
+    async def send_verification_email(self, email: str, code: str):
+        """Send email verification code"""
+        html_content = f"Your verification code is: <strong>{code}</strong>"
+        await self.send_email(email, "Email Verification", html_content)
 
     async def send_password_reset_email(self, email: str, token: str):
+        """Send password reset link"""
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
-        message = Mail(
-            from_email=settings.EMAIL_FROM,
-            to_emails=email,
-            subject="Password Reset",
-            html_content=f"Click here to reset your password: <a href='{reset_link}'>{reset_link}</a>")
-        await self._send_email(message)
+        html_content = f"Click here to reset your password: <a href='{reset_link}'>{reset_link}</a>"
+        await self.send_email(email, "Password Reset", html_content)
 
     async def _send_email(self, message: Mail):
+        """Helper function to send email using SendGrid"""
         try:
             sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
             response = sg.send(message)

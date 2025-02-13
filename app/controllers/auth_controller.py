@@ -6,29 +6,32 @@ from app.models.auth_models import (
     ResendVerificationRequest, ForgotPasswordRequest,
     ResetPasswordRequest
 )
-from app.models.user_models.user import User, Language, Email, UserRole
+from app.models.user_models.user import User, Language, UserRole
 
 
 class AuthController:
     def __init__(self, auth_service: AuthService):
         self.auth_service = auth_service
 
+    # Register a new user
     async def register(self, request: UserRegisterRequest) -> Token:
         try:
             user = await self.auth_service.register_user(request)
-            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email.address})
+            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email})
             return Token(access_token=access_token, refresh_token=refresh_token)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    # Login with email and password
     async def login(self, request: UserLoginRequest) -> Token:
         try:
             user = await self.auth_service.login_user(request.email, request.password)
-            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email.address})
+            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email})
             return Token(access_token=access_token, refresh_token=refresh_token)
         except ValueError as e:
             raise HTTPException(status_code=401, detail=str(e))
 
+    # Login using social provider (e.g., Google)
     async def social_login(self, request: SocialLoginRequest) -> Token:
         try:
             if request.provider == "google":
@@ -37,11 +40,11 @@ class AuthController:
                 raise HTTPException(status_code=400, detail="Unsupported provider")
 
             email = user_data.get("email")
-            user = await self.auth_service.user_service.get_by_email(email)
+            user = await self.auth_service.user_service.get_user_by_email(email)
 
             if not user:
                 user = User(
-                    email=Email(address=email, is_verified=True),
+                    email=email,
                     full_name=user_data.get("name", ""),
                     role=UserRole.USER,
                     language=Language.EN
@@ -53,20 +56,24 @@ class AuthController:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    # Verify email with verification code
     async def verify_email(self, request: VerifyEmailRequest) -> dict:
         success = await self.auth_service.verify_email(request.code)
         if not success:
-            raise HTTPException(status_code=400, detail="Invalid code")
+            raise HTTPException(status_code=400, detail="Invalid verification code")
         return {"success": True}
 
+    # Resend verification code
     async def resend_verification(self, request: ResendVerificationRequest) -> dict:
         await self.auth_service.resend_verification(request.email)
         return {"success": True}
 
+    # Request password reset link
     async def forgot_password(self, request: ForgotPasswordRequest) -> dict:
         await self.auth_service.forgot_password(request.email)
         return {"success": True}
 
+    # Reset password using reset token
     async def reset_password(self, request: ResetPasswordRequest) -> dict:
         try:
             await self.auth_service.reset_password(request.token, request.new_password)
