@@ -1,3 +1,4 @@
+# src/models/base_model.py
 from typing import List, Optional
 from pydantic import BaseModel, Field, EmailStr
 from enum import Enum

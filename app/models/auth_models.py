@@ -1,3 +1,4 @@
+# src/models/auth_models.py
 from pydantic import  EmailStr
 from typing import Optional
 from datetime import datetime
