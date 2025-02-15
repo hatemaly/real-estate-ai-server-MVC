@@ -2,7 +2,8 @@ from typing import List, Optional
 from app.models.user_models.user import User, Language
 from app.repositories.user_repository import UserRepository
 
-class UserService:
+class \
+        UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
@@ -18,6 +19,11 @@ class UserService:
         """Update user details"""
         await self.repository.update(user)
         return user
+
+    async def create_user(self, user: User) -> User:
+        """Create new user"""
+        created_user = await self.repository.create_user(user)
+        return created_user
 
     async def update_user_details(self, user_id: str, full_name: Optional[str] = None, phone: Optional[str] = None, language: Optional[str] = None) -> User:
         """Update user details like full name, phone, and language"""

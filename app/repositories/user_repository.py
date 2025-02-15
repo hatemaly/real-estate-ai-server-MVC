@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from app.models.user_models.user import User, UserRole, Language
 from datetime import datetime, timedelta
 from pymongo.collection import Collection
@@ -47,6 +49,28 @@ class UserRepository(BaseRepository):
             {"_id": user.id},
             {"$set": {f"social_providers.{provider}": provider_user_id}}
         )
+        return user
+
+    async def create_user(self, user: User) -> User:
+        user_id = str(uuid.uuid4())
+        user_dict = user.model_dump()
+        user_dict["_id"] = user_id
+        user_dict["role"] = user.role.value
+        user_dict["language"] = user.language.value
+        user_dict["created_at"] = user.created_at.isoformat()
+        user_dict["updated_at"] = user.updated_at.isoformat()
+        try:
+            result = await self.collection.insert_one(user_dict)
+            inserted_user = await self.collection.find_one({"_id": user_id})
+            if not inserted_user:
+                raise HTTPException(status_code=500, detail="Failed to retrieve inserted user")
+
+            return User(**inserted_user)
+
+        except Exception as e:
+            # 🔥 Log the error
+            print(f"🚨 Database Insert Error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal Server Error: Failed to create user")
         return user
 
     # Email/Password authentication methods

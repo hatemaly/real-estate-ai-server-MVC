@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.database.session import db_session
 from app.routers import auth_router
 from app.routers.conversation_router import router as conversation_router
@@ -24,6 +26,18 @@ async def shutdown_event():
     await db_session.disconnect()
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify allowed domains like ["http://localhost:3000"]
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+import ssl
+import urllib.request
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 app.include_router(auth_router.router)
 # Include routers

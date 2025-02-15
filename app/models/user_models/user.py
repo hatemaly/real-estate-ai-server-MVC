@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
 from datetime import datetime
 
+from app.models.user_models.object_values import Phone
+
+
 class SocialProvider(str, Enum):
     GOOGLE = "google"
     FACEBOOK = "facebook"
@@ -19,6 +22,15 @@ class Language(str, Enum):
     EN = "en"
     AR = "ar"
 
+class SocialAccount(BaseModelApp):
+    provider: SocialProvider
+    provider_user_id: str         # Unique ID from provider
+    access_token: str             # Current valid token
+    refresh_token: Optional[str]  # For token renewal
+    expires_at: datetime          # Token expiration
+    scopes: List[str]             # Granted permissions (e.g., ["email", "profile"])
+
+
 class User(BaseModelApp):
     email: EmailStr               # Primary verified email
     first_name: str
@@ -26,19 +38,12 @@ class User(BaseModelApp):
     social_providers: List[SocialProvider] = Field(default_factory=list)  # Track OAuth providers used
     role: UserRole = UserRole.USER
     language: Language = Language.EN
-    phone: Optional[str] = None
+    social_accounts: list[SocialAccount] = Field(default_factory=list)
+    phone: Optional[Phone] = None
     favorites: List[str] = Field(default_factory=list)
     hashed_password: Optional[str] = None  # Present for email/password users
     is_verified: bool = False     # Email verification status
 
-class SocialAccount(BaseModelApp):
-    user_id: str                  # Reference to User document
-    provider: SocialProvider
-    provider_user_id: str         # Unique ID from provider
-    access_token: str             # Current valid token
-    refresh_token: Optional[str]  # For token renewal
-    expires_at: datetime          # Token expiration
-    scopes: List[str]             # Granted permissions (e.g., ["email", "profile"])
 
     def is_expired(self):
         return datetime.utcnow() > self.expires_at

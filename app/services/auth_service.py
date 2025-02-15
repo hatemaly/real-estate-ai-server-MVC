@@ -1,9 +1,11 @@
+import hashlib
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from typing import Optional
+import bcrypt
 import random
 import string
 from app.models.auth_models import UserRegisterRequest
+from app.models.user_models.object_values import Email
 from app.models.user_models.user import User, UserRole
 from app.services.email_service import EmailService
 from app.services.user_service import UserService
@@ -34,44 +36,45 @@ class AuthService:
 
     async def register_user(self, user_data: UserRegisterRequest) -> dict:
         """Register a new user and send email verification"""
+        print(user_data.email)
         existing_user = await self.user_service.get_user_by_email(user_data.email)
+        print(user_data)
         if existing_user:
             raise ValueError("Email already registered")
 
-        hashed_pwd = pwd_context.hash(user_data.password)
+        hashed_pwd = hashlib.sha256(user_data.password.encode()).hexdigest()
         verification_code = ''.join(random.choices(string.digits, k=6))
 
+        print(user_data.email, user_data.first_name,hashed_pwd)
         user = User(
             email=user_data.email,
-            password_hash=hashed_pwd,
-            full_name=user_data.full_name,
+            hashed_password=hashed_pwd,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
             phone=user_data.phone,
             language=user_data.language,
-            verification_code=verification_code
+            is_verified=True
         )
-        await self.user_service.create_user(user)
-        await self.email_service.send_verification_email(user.email, verification_code)
+
+        created_user = await self.user_service.create_user(user)
+        # await self.email_service.send_verification_email(user.email, verification_code)
 
         access_token, refresh_token = await self.create_access_token({"user_id": user.id, "role": user.role})
 
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "full_name": user.full_name,
-                "phone": user.phone,
-                "language": user.language,
-                "role": user.role,
-                "is_verified": user.is_verified
-            }
+            "user": created_user
         }
 
     async def login_user(self, email: str, password: str) -> dict:
-        """Authenticate user with email and password"""
+        print(email , password)
         user = await self.user_service.get_user_by_email(email)
-        if not user or not pwd_context.verify(password, user.password_hash):
+        print(user)
+        if not user:
+            raise ValueError("Invalid credentials")
+        hashed_pwd = hashlib.sha256(password.encode()).hexdigest()
+        if user.hashed_password != hashed_pwd:
             raise ValueError("Invalid credentials")
         if not user.is_verified:
             raise ValueError("Email not verified")
@@ -84,7 +87,8 @@ class AuthService:
             "user": {
                 "id": user.id,
                 "email": user.email,
-                "full_name": user.full_name,
+                "first_name": user.first_name,
+                "last_name" : user.last_name,
                 "phone": user.phone,
                 "language": user.language,
                 "role": user.role,

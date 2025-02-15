@@ -17,17 +17,16 @@ class AuthController:
     async def register(self, request: UserRegisterRequest) -> Token:
         try:
             user = await self.auth_service.register_user(request)
-            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email})
-            return Token(access_token=access_token, refresh_token=refresh_token)
+            return Token(access_token=user["access_token"], refresh_token=user["refresh_token"])
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
     # Login with email and password
     async def login(self, request: UserLoginRequest) -> Token:
         try:
+            print(request)
             user = await self.auth_service.login_user(request.email, request.password)
-            access_token, refresh_token = await self.auth_service.create_access_token({"sub": user.email})
-            return Token(access_token=access_token, refresh_token=refresh_token)
+            return Token(access_token=user["access_token"], refresh_token=user["refresh_token"])
         except ValueError as e:
             raise HTTPException(status_code=401, detail=str(e))
 

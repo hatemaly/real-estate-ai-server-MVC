@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import Body
+from pydantic import BaseModel, EmailStr
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 from app.database.collections import get_user_collection
@@ -19,7 +21,8 @@ async def get_auth_controller() -> AuthController:
     user_collection = await get_user_collection()
     user_repo = UserRepository(user_collection)
     user_service = UserService(user_repo)
-    auth_service = AuthService(user_service)
+    email_service = EmailService()
+    auth_service = AuthService(user_service,email_service)
     return AuthController(auth_service)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -56,10 +59,10 @@ async def social_login(request: SocialLoginRequest, controller: AuthController =
     return await controller.social_login(request)
 
 # Register a new user
-@router.post("/register", response_model=Token)
-async def register(request: UserRegisterRequest, controller: AuthController = Depends(get_auth_controller)):
-    return  {"message": "User registered successfully"}
-    return await controller.register(request)
+@router.post("/register")
+async def register(request : UserRegisterRequest, controller: AuthController = Depends(get_auth_controller)):
+    print(request)
+    return  await controller.register(request)
 
 # Login with email and password
 @router.post("/login", response_model=Token)

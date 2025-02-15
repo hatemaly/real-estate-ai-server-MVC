@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 from app.models.auth_models import Token, SocialLoginRequest
 from app.controllers.auth_controller import AuthController
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 from app.database.collections import get_user_collection
@@ -29,7 +30,8 @@ async def get_auth_controller() -> AuthController:
     user_collection = await get_user_collection()
     user_repo = UserRepository(user_collection)
     user_service = UserService(user_repo)
-    auth_service = AuthService(user_service)
+    email_service = EmailService()
+    auth_service = AuthService(user_service,email_service)
     return AuthController(auth_service)
 
 router = APIRouter(prefix="/auth/google", tags=["Google OAuth"])
