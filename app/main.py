@@ -45,8 +45,7 @@ app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(property_router, prefix="/properties", tags=["Properties"])
 app.include_router(project_router, prefix="/projects", tags=["Projects"])
 app.include_router(developer_router, prefix="/developers", tags=["Developers"])
-app.include_router(location_router, prefix="/locations", tags=["Locations"])
-
+app.include_router(location_router, prefix="/api/v1/locations", tags=["locations"])
 app.include_router(conversation_router, prefix="/conversations", tags=["Conversations"])
 
 # Add endpoints

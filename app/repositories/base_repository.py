@@ -35,6 +35,7 @@ class BaseRepository(ABC, Generic[T, ID]):
             return self.model(**document)
         return None
 
+
     async def activate(self, aggregate_id: str) -> None:
         await self.collection.update_one({"_id": aggregate_id}, {"$set": {"is_active": True}})
 
