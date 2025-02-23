@@ -1,9 +1,16 @@
 # src/services/location_service.py
+from typing import Optional
+
+from fastapi import HTTPException
+
+from app.DTOs.LocationDTOs.GalleryUpdateDTO import GalleryUpdateResponseDTO
 from app.DTOs.LocationDTOs.LocationCreateDTO import LocationUpdateDTO, LocationCreateDTO
+from app.DTOs.LocationDTOs.LocationParentsResponseDTO import LocationParentsResponseDTO
 from app.DTOs.LocationDTOs.LocationResponseDTO import LocationResponseDTO
 from app.DTOs.LocationDTOs.LocationSearchByNameDTO import LocationSearchByNameDTO
 from app.DTOs.LocationDTOs.LocationSearchByTypeDTO import LocationSearchByTypeDTO
 from app.DTOs.LocationDTOs.LocationSearchResultDTO import LocationSearchResultDTO
+from app.DTOs.LocationDTOs.PriceUpdateDTO import PriceUpdateResponseDTO
 from app.repositories.location_repository import LocationRepository
 
 
@@ -87,3 +94,60 @@ class LocationService:
             limit=limit,
             pages=pages
         )
+
+    async def get_location_children(
+            self,
+            location_id: str,
+            page: int,
+            limit: int,
+            location_type: Optional[str] = None
+    ) -> LocationSearchResultDTO:
+        items = await self.repository.list_locations(
+            location_type=location_type,
+            parent_id=location_id,
+            page=page,
+            limit=limit
+        )
+        total = await self.repository.count_locations(
+            location_type=location_type,
+            parent_id=location_id
+        )
+        pages = (total + limit - 1) // limit
+        return LocationSearchResultDTO(
+            items=[self._convert_to_dto(item) for item in items],
+            total=total,
+            page=page,
+            pages=pages
+        )
+
+    async def get_location_parents(
+            self,
+            location_id: str,
+            location_type: Optional[str] = None
+    ) -> LocationParentsResponseDTO:
+        location = await self.repository.get_by_id(location_id)
+        if not location:
+            raise HTTPException(status_code=404, detail="Location not found")
+        parent_ids = location.parent_ids
+        parents = await self.repository.get_by_ids(parent_ids) if parent_ids else []
+        if location_type:
+            parents = [p for p in parents if p.location_type == location_type]
+        return LocationParentsResponseDTO(items=[self._convert_to_dto(p) for p in parents])
+
+    async def update_gallery(
+            self,
+            location_id: str,
+            gallery_urls: list[str]
+    ) -> GalleryUpdateResponseDTO:
+        update_data = LocationUpdateDTO(gallery_urls=gallery_urls)
+        updated = await self.repository.update(location_id, update_data)
+        return GalleryUpdateResponseDTO(gallery_urls=updated.gallery_urls)
+
+    async def update_price(
+            self,
+            location_id: str,
+            average_price_m2: float
+    ) -> PriceUpdateResponseDTO:
+        update_data = LocationUpdateDTO(average_price_m2=average_price_m2)
+        updated = await self.repository.update(location_id, update_data)
+        return PriceUpdateResponseDTO(average_price_m2=updated.average_price_m2)

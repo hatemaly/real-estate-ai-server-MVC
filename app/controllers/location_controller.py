@@ -1,11 +1,16 @@
 # src/controllers/location_controller.py
+from typing import Optional
+
 from fastapi import HTTPException
 
+from app.DTOs.LocationDTOs.GalleryUpdateDTO import GalleryUpdateResponseDTO, GalleryUpdateRequestDTO
 from app.DTOs.LocationDTOs.LocationCreateDTO import LocationUpdateDTO, LocationCreateDTO
+from app.DTOs.LocationDTOs.LocationParentsResponseDTO import LocationParentsResponseDTO
 from app.DTOs.LocationDTOs.LocationResponseDTO import LocationResponseDTO
 from app.DTOs.LocationDTOs.LocationSearchByNameDTO import LocationSearchByNameDTO
 from app.DTOs.LocationDTOs.LocationSearchByTypeDTO import LocationSearchByTypeDTO
 from app.DTOs.LocationDTOs.LocationSearchResultDTO import LocationSearchResultDTO
+from app.DTOs.LocationDTOs.PriceUpdateDTO import PriceUpdateRequestDTO, PriceUpdateResponseDTO
 from app.services.location_service import LocationService
 
 
@@ -48,3 +53,33 @@ class LocationController:
             limit: int = 10
     ) -> LocationSearchResultDTO:
         return await self.location_service.list_locations(location_type, parent_id, search, page, limit)
+
+    async def get_location_children(
+            self,
+            location_id: str,
+            page: int = 1,
+            limit: int = 10,
+            location_type: Optional[str] = None
+    ) -> LocationSearchResultDTO:
+        return await self.location_service.get_location_children(location_id, page, limit, location_type)
+
+    async def get_location_parents(
+            self,
+            location_id: str,
+            location_type: Optional[str] = None
+    ) -> LocationParentsResponseDTO:
+        return await self.location_service.get_location_parents(location_id, location_type)
+
+    async def update_location_gallery(
+            self,
+            location_id: str,
+            data: GalleryUpdateRequestDTO
+    ) -> GalleryUpdateResponseDTO:
+        return await self.location_service.update_gallery(location_id, data.gallery_urls)
+
+    async def update_location_price(
+            self,
+            location_id: str,
+            data: PriceUpdateRequestDTO
+    ) -> PriceUpdateResponseDTO:
+        return await self.location_service.update_price(location_id, data.average_price_m2)

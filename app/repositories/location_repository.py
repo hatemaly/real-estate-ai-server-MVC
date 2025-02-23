@@ -93,3 +93,10 @@ class LocationRepository(BaseRepository):
 
         count = await self.collection.count_documents(query)
         return count
+
+    async def get_by_ids(self, ids: list[str]) -> list[Location]:
+        if not ids:
+            return []
+        cursor = self.collection.find({"_id": {"$in": ids}})
+        documents = await cursor.to_list(length=None)
+        return [self.model(**doc) for doc in documents]

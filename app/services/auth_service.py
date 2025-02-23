@@ -123,68 +123,6 @@ class AuthService:
 
         return access_token, refresh_token
 
-    async def register_user(self, user_data: UserRegisterRequest) -> dict:
-        """Register a new user and send email verification"""
-        print(user_data.email)
-        existing_user = await self.user_service.get_user_by_email(user_data.email)
-        print(user_data)
-        if existing_user:
-            raise ValueError("Email already registered")
-
-        hashed_pwd = hashlib.sha256(user_data.password.encode()).hexdigest()
-        verification_code = ''.join(random.choices(string.digits, k=6))
-
-        print(user_data.email, user_data.first_name,hashed_pwd)
-        user = User(
-            email=user_data.email,
-            hashed_password=hashed_pwd,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name,
-            phone=user_data.phone,
-            language=user_data.language,
-            is_verified=True
-        )
-
-        created_user = await self.user_service.create_user(user)
-        # await self.email_service.send_verification_email(user.email, verification_code)
-
-        access_token, refresh_token = await self.create_access_token({"user_id": user.id, "role": user.role})
-
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "user": created_user
-        }
-
-    async def login_user(self, email: str, password: str) -> dict:
-        print(email , password)
-        user = await self.user_service.get_user_by_email(email)
-        print(user)
-        if not user:
-            raise ValueError("Invalid credentials")
-        hashed_pwd = hashlib.sha256(password.encode()).hexdigest()
-        if user.hashed_password != hashed_pwd:
-            raise ValueError("Invalid credentials")
-        if not user.is_verified:
-            raise ValueError("Email not verified")
-
-        access_token, refresh_token = await self.create_access_token({"user_id": user.id, "role": user.role})
-
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name" : user.last_name,
-                "phone": user.phone,
-                "language": user.language,
-                "role": user.role,
-                "is_verified": user.is_verified
-            }
-        }
-
     async def verify_email(self, code: str) -> dict:
         """Verify email using code"""
         success = await self.user_service.verify_email(code)
