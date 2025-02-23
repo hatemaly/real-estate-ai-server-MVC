@@ -36,6 +36,10 @@ class UserLoginRequest(BaseModel):
     email: str
     password: str
 
+class OAuthLoginRequest(BaseModel):
+    provider: str  # e.g., "google", "github"
+    token: str  # JWT from Supabase
+
 class SocialLoginRequest(BaseModelApp):
     provider: SocialProvider
     token: str
