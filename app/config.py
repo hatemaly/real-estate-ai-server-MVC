@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     cache_expiration: int
     log_level: str
 
+    supabase_url:str
+    supabase_key:str
+
+
     class Config:
         env_file = ".env"
 
