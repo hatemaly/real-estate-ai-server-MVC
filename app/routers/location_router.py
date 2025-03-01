@@ -1,12 +1,15 @@
 # app/routers/location_router.py
 from fastapi import APIRouter, Depends
-from typing import List
+from typing import List, Optional
 
+from app.DTOs.LocationDTOs.GalleryUpdateDTO import GalleryUpdateRequestDTO, GalleryUpdateResponseDTO
 from app.DTOs.LocationDTOs.LocationCreateDTO import LocationUpdateDTO, LocationCreateDTO
+from app.DTOs.LocationDTOs.LocationParentsResponseDTO import LocationParentsResponseDTO
 from app.DTOs.LocationDTOs.LocationResponseDTO import LocationResponseDTO
 from app.DTOs.LocationDTOs.LocationSearchByNameDTO import LocationSearchByNameDTO
 from app.DTOs.LocationDTOs.LocationSearchByTypeDTO import LocationSearchByTypeDTO
 from app.DTOs.LocationDTOs.LocationSearchResultDTO import LocationSearchResultDTO
+from app.DTOs.LocationDTOs.PriceUpdateDTO import PriceUpdateRequestDTO, PriceUpdateResponseDTO
 from app.controllers.location_controller import LocationController
 from app.repositories.location_repository import LocationRepository
 from app.database.collections import get_location_collection
@@ -82,3 +85,38 @@ async def list_locations(
     controller: LocationController = Depends(get_location_controller)
 ):
     return await controller.list_locations(location_type, parent_id, search, page, limit)
+
+
+@router.get("/{location_id}/children", response_model=LocationSearchResultDTO)
+async def get_children(
+    location_id: str,
+    page: int = 1,
+    limit: int = 10,
+    location_type: Optional[str] = None,
+    controller: LocationController = Depends(get_location_controller)
+):
+    return await controller.get_location_children(location_id, page, limit, location_type)
+
+@router.get("/{location_id}/parents", response_model=LocationParentsResponseDTO)
+async def get_parents(
+    location_id: str,
+    location_type: Optional[str] = None,
+    controller: LocationController = Depends(get_location_controller)
+):
+    return await controller.get_location_parents(location_id, location_type)
+
+@router.put("/{location_id}/gallery", response_model=GalleryUpdateResponseDTO)
+async def update_gallery(
+    location_id: str,
+    data: GalleryUpdateRequestDTO,
+    controller: LocationController = Depends(get_location_controller)
+):
+    return await controller.update_location_gallery(location_id, data)
+
+@router.put("/{location_id}/price", response_model=PriceUpdateResponseDTO)
+async def update_price(
+    location_id: str,
+    data: PriceUpdateRequestDTO,
+    controller: LocationController = Depends(get_location_controller)
+):
+    return await controller.update_location_price(location_id, data)

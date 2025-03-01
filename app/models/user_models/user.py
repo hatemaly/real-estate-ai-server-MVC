@@ -22,7 +22,7 @@ class Language(str, Enum):
     EN = "en"
     AR = "ar"
 
-class SocialAccount(BaseModelApp):
+class SocialAccount(BaseModel):
     provider: SocialProvider
     provider_user_id: str         # Unique ID from provider
     access_token: str             # Current valid token
@@ -48,12 +48,5 @@ class User(BaseModelApp):
     def is_expired(self):
         return datetime.utcnow() > self.expires_at
 
-class EmailVerificationToken(BaseModelApp):
-    user_id: str = Field(...)     # Reference to User document
-    token: str = Field(...)       # Unique verification token
-    expires_at: datetime = Field(...)  # Token expiration time
-    used: bool = Field(default=False)  # Prevent token reuse
 
-    def is_valid(self):
-        return not self.used and datetime.utcnow() < self.expires_at
 
