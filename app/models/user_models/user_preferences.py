@@ -1,7 +1,9 @@
 # src/models/user_models/user_preferences.py
-from pydantic import  Field
+from pydantic import Field
 from typing import List, Optional
 from pydantic import BaseModel
+
+from app.models.property_models.property import Property
 
 
 class PriceRange(BaseModel):
@@ -12,4 +14,5 @@ class PriceRange(BaseModel):
 class UserPreferences(BaseModel):
     preferred_locations: List[str] = Field(default_factory=list)
     preferred_property_types: List[str] = Field(default_factory=list)
+    preferred_properties: List[Property] = Field(default_factory=list)
     price_range: Optional[PriceRange] = None
