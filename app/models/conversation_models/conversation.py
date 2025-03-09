@@ -1,5 +1,5 @@
 # src/models/conversation_models/conversation.py
-from pydantic import  Field
+from pydantic import Field
 from datetime import datetime
 from typing import List, Optional
 from enum import Enum
@@ -23,6 +23,7 @@ class ConversationStatus(str, Enum):
 class Response(BaseModelApp):
     content: str
     related_property_ids: List[str] = Field(default_factory=list)
+    best_property_id: Optional[str] = None
     role: Role = Role.ASSISTANT
 
 
