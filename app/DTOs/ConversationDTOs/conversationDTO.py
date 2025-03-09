@@ -23,7 +23,6 @@ class UserMessageRequestDTO(BaseModelApp):
     role: Role = Role.USER
 
 
-# Main Entity
 class ConversationResponse(BaseModelApp):
     user_id: str
     title: str = Field(default="New Conversation")
