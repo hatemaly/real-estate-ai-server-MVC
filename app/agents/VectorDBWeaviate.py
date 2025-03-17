@@ -1,19 +1,27 @@
 # @title implmentation of vector store weaviate.
 import os
 from typing import List
+
+from pydantic import BaseModel, Field
 import weaviate.classes as wvc
 from httpx import Auth
 from langchain.vectorstores import weaviate
 from langsmith.schemas import DataType
 from weaviate.collections.classes.config import Configure
-
+from langchain_openai.embeddings import OpenAIEmbeddings
 from app.models.property_models.property import Property
+
+
+class EmbeddingMessage(BaseModel):
+    query_embedding: List[float] = Field(
+        ..., description="The embedding of the reformatted message."
+    )
 
 
 class VectorDBWeaviate:
 
     def connect(self):
-        cluster_url="https://khyfid1rtefnmjyeahzrg.c0.europe-west3.gcp.weaviate.cloud"
+        cluster_url = "https://khyfid1rtefnmjyeahzrg.c0.europe-west3.gcp.weaviate.cloud"
 
         self.client = weaviate.connect_to_weaviate_cloud(
             cluster_url=cluster_url,
@@ -26,7 +34,6 @@ class VectorDBWeaviate:
     def is_collection_existed(self, collection_name: str) -> bool:
         return self.client.collections.exists(collection_name)
 
-
     def list_all_collections(self) -> List:
         return self.client.collections.list_all(simple=True)
 
@@ -36,10 +43,14 @@ class VectorDBWeaviate:
     def delete_collection(self, collection_name: List[str]) -> None:
         self.client.collections.delete(collection_name)
 
-
-    def create_collection(self, collection_name: str,
-                                embedding_size: int = 512,
-                                do_reset: bool = False) -> bool:
+    def create_collection(
+        self,
+        collection_name: str,
+        properties: List[Property],
+        description: str = "",
+        embedding_size: int = 512,
+        do_reset: bool = False,
+    ) -> bool:
 
         is_exist = self.is_collection_existed(collection_name)
 
@@ -51,37 +62,65 @@ class VectorDBWeaviate:
         self.client.collections.create(
             collection_name,
             vectorizer_config=Configure.Vectorizer.text2vec_openai(
-                model="text-embedding-3-small",
-                dimensions=embedding_size
+                model="text-embedding-3-small", dimensions=embedding_size
             ),
             description="A collection of news articles",
-            properties=[  # properties configuration is optional
-                Property(name="property_id", data_type=DataType.UUID,description="The property id (uuid)"),
-                Property(name="content", data_type=DataType.TEXT,description="The main content of the property"),
-            ]
+            properties=properties,
         )
         return True
 
-
-    def insert_one(self, collection_name: str, text: str, vector: list, metadata: dict = None):
+    def insert_one(self, collection_name: str, vector: list, data: dict):
 
         collection = self.client.collections.get(collection_name)
-        data = {
-            "property_id": metadata.get("property_id"),
-            "content": text
-        }
-        uuid = collection.data.insert(
-            properties=data,
-            vector=vector
-        )
+
+        uuid = collection.data.insert(properties=data, vector=vector)
 
         return uuid
 
-    def insert_many(self, collection_name: str, texts: list,
-                          vectors: list, metadata: list = None,
-                          record_ids: list = None, batch_size: int = 50):
-        pass
+    def insert_many_locations(self, data_rows: list, metadata: list = None):
+        collection = self.client.collections.get("Locations")
 
+        with collection.batch.dynamic() as batch:
+            for data_row in data_rows:
+                embedding_text = f'name: {data_row["name"]}\n other names: {data_row["other_names"]}\n'
+                batch.add_object(
+                    properties={"location_id": data_row["location_id"]},
+                    vector=self.get_embedding(embedding_text).query_embedding,
+                )
+                if batch.number_errors >= 1:
+                    print("Batch import stopped due to excessive errors.")
+                    return False
+        return True
+
+    def insert_many_developers(self, data_rows: list, metadata: list = None):
+        collection = self.client.collections.get("Developers")
+
+        with collection.batch.dynamic() as batch:
+            for data_row in data_rows:
+                embedding_text = f'name: {data_row["name"]}\n other names: {data_row["other_names"]}\n description: {data_row["description"]}'
+                batch.add_object(
+                    properties={"developer_id": data_row["developer_id"]},
+                    vector=self.get_embedding(embedding_text).query_embedding,
+                )
+                if batch.number_errors >= 1:
+                    print("Batch import stopped due to excessive errors.")
+                    return False
+        return True
+
+    def insert_many_projects(self, data_rows: list, metadata: list = None):
+        collection = self.client.collections.get("Projects")
+
+        with collection.batch.dynamic() as batch:
+            for data_row in data_rows:
+                embedding_text = f'name: {data_row["name"]}\n other names: {data_row["other_names"]}\n description: {data_row["description"]}'
+                batch.add_object(
+                    properties={"project_id": data_row["project_id"]},
+                    vector=self.get_embedding(embedding_text).query_embedding,
+                )
+                if batch.number_errors >= 1:
+                    print("Batch import stopped due to excessive errors.")
+                    return False
+        return True
 
     def search_by_vector(self, collection_name: str, vector: list, limit: int):
         collection = self.client.collections.get(collection_name)
@@ -96,19 +135,20 @@ class VectorDBWeaviate:
                 certainty=True,  # Explicitly request certainty scores
                 explain_score=True,
                 is_consistent=True,
-
-            )
+            ),
         )
 
         results = []
         for obj in response.objects:
-            results.append({
-                "property_id": obj.properties["property_id"],
-                "content": obj.properties["content"],
-                "distance": obj.metadata.distance,  # The similarity score
-                "score": obj.metadata.score,  # The similarity score
-                "certainty": obj.metadata.certainty,
-            })
+            results.append(
+                {
+                    "property_id": obj.properties["property_id"],
+                    "content": obj.properties["content"],
+                    "distance": obj.metadata.distance,  # The similarity score
+                    "score": obj.metadata.score,  # The similarity score
+                    "certainty": obj.metadata.certainty,
+                }
+            )
 
         return results
 
@@ -128,22 +168,22 @@ class VectorDBWeaviate:
 
         for location_name in location_names:
             # Get vector embedding for the location name
-            vector = self._get_embedding(location_name)
+            vector = self.get_embedding(location_name).query_embedding
 
             # Perform near_vector search
             response = collection.query.near_vector(
                 near_vector=vector,
                 limit=1,
-                return_properties=["property_id", "content"],
-                return_metadata=wvc.query.MetadataQuery(
-                    certainty=True
-                )
+                return_properties=["location_id"],
+                return_metadata=wvc.query.MetadataQuery(certainty=True),
             )
 
             if response.objects and len(response.objects) > 0:
                 # You might want to add a certainty threshold here
-                if response.objects[0].metadata.certainty > 0.7:  # Adjust threshold as needed
-                    location_ids.append(response.objects[0].properties["property_id"])
+                if (
+                    response.objects[0].metadata.certainty > 0.7
+                ):  # Adjust threshold as needed
+                    location_ids.append(response.objects[0].properties["location_id"])
                 else:
                     location_ids.append(None)  # Below certainty threshold
             else:
@@ -167,22 +207,22 @@ class VectorDBWeaviate:
 
         for developer_name in developer_names:
             # Get vector embedding for the developer name
-            vector = self._get_embedding(developer_name)
+            vector = self.get_embedding(developer_name).query_embedding
 
             # Perform near_vector search
             response = collection.query.near_vector(
                 near_vector=vector,
                 limit=1,
-                return_properties=["property_id", "content"],
-                return_metadata=wvc.query.MetadataQuery(
-                    certainty=True
-                )
+                return_properties=["developer_id"],
+                return_metadata=wvc.query.MetadataQuery(certainty=True),
             )
 
             if response.objects and len(response.objects) > 0:
                 # You might want to add a certainty threshold here
-                if response.objects[0].metadata.certainty > 0.7:  # Adjust threshold as needed
-                    developer_ids.append(response.objects[0].properties["property_id"])
+                if (
+                    response.objects[0].metadata.certainty > 0.7
+                ):  # Adjust threshold as needed
+                    developer_ids.append(response.objects[0].properties["developer_id"])
                 else:
                     developer_ids.append(None)  # Below certainty threshold
             else:
@@ -206,22 +246,22 @@ class VectorDBWeaviate:
 
         for project_name in project_names:
             # Get vector embedding for the project name
-            vector = self._get_embedding(project_name)
+            vector = self.get_embedding(project_name).query_embedding
 
             # Perform near_vector search
             response = collection.query.near_vector(
                 near_vector=vector,
                 limit=1,
-                return_properties=["property_id", "content"],
-                return_metadata=wvc.query.MetadataQuery(
-                    certainty=True
-                )
+                return_properties=["project_id"],
+                return_metadata=wvc.query.MetadataQuery(certainty=True),
             )
 
             if response.objects and len(response.objects) > 0:
                 # You might want to add a certainty threshold here
-                if response.objects[0].metadata.certainty > 0.7:  # Adjust threshold as needed
-                    project_ids.append(response.objects[0].properties["property_id"])
+                if (
+                    response.objects[0].metadata.certainty > 0.7
+                ):  # Adjust threshold as needed
+                    project_ids.append(response.objects[0].properties["project_id"])
                 else:
                     project_ids.append(None)  # Below certainty threshold
             else:
@@ -229,18 +269,9 @@ class VectorDBWeaviate:
 
         return project_ids
 
-    def _get_embedding(self, text: str) -> list:
+    def get_embedding(self, text: str) -> list:
         """
-        Helper method to get embedding for a text using the OpenAI API
-        Replace this with your actual embedding generation logic
+        Converts the message into embeddings for vector store search.
         """
-        # This is a placeholder - you should implement your actual embedding generation
-        # Example implementation using OpenAI:
-        import openai
-
-        response = openai.Embedding.create(
-            model="text-embedding-3-small",
-            input=text
-        )
-
-        return response.data[0].embedding
+        query_embedding = OpenAIEmbeddings().embed_query(text)
+        return EmbeddingMessage(query_embedding=query_embedding)
