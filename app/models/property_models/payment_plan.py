@@ -23,7 +23,7 @@ class SpecialPayment(BaseModelApp):
 
 class PaymentPlan(BaseModelApp):
     id: Optional[str] = None  # MongoDB or UUID
-    name: str
+    name: str   
     description: Optional[str] = None
     down_payment_percentage: Optional[float] = None
     installment_years: Optional[int] = None
