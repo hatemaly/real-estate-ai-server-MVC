@@ -12,9 +12,9 @@ from pydantic import BaseModel
 
 class OutputSchema(BaseModel):
     is_real_estate_related: bool = Field(
-        ...,
-        description="Whether the message is related to real estate"
+        ..., description="Whether the message is related to real estate"
     )
+
 
 class GoogleGenerativeRealEstateValidator:
     def _init_(self):
@@ -23,8 +23,8 @@ class GoogleGenerativeRealEstateValidator:
             model="gemini-2.0-flash",  # Using Gemini 1.5 Pro model
             temperature=0,  # Lower temperature for more consistent outputs
             max_output_tokens=100,  # Adjust as needed
-            google_api_key=os.getenv("GEMINI_API_KEY")
-            )
+            google_api_key=os.getenv("GEMINI_API_KEY"),
+        )
 
         self.company_context = """
         CBRE Group, Inc. is a global leader in the real estate services and investment industry,
@@ -58,27 +58,28 @@ class GoogleGenerativeRealEstateValidator:
             Return false for all other topics or ambiguous cases.
 
             {format_instructions}
-            """
+            """,
         )
 
         # Create the chain using RunnablePassthrough
         self.chain = (
-            RunnablePassthrough.assign(format_instructions=lambda _: self.output_parser.get_format_instructions())
+            RunnablePassthrough.assign(
+                format_instructions=lambda _: self.output_parser.get_format_instructions()
+            )
             | self.prompt_template
             | self.llm
             | self.output_parser
         )
 
-    def execute(self, user_message: str) -> Dict[str, Any]:
+    async def execute(self, user_message: str) -> Dict[str, Any]:
         """
         Validate if a message is related to real estate.
         """
         # Run the chain using invoke
         try:
-            parsed_output = self.chain.invoke({
-                "company_context": self.company_context,
-                "user_message": user_message
-            })
+            parsed_output = self.chain.ainvoke(
+                {"company_context": self.company_context, "user_message": user_message}
+            )
             return parsed_output.model_dump()
         except Exception as e:
             return {"is_real_estate_related": False, "error": str(e)}

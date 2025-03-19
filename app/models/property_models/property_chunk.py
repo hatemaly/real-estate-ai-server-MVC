@@ -1,4 +1,4 @@
-from pydantic import  Field
+from pydantic import  Field, BaseModel
 from typing import List, Optional
 from datetime import datetime
 
@@ -8,4 +8,6 @@ from enum import Enum
 
 
 
-class Prooerty
+class PropertyChunk(BaseModel):
+    title: str
+    description: Optional[str] = None

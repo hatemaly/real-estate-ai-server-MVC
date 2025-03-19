@@ -12,7 +12,7 @@ from app.schemas.conversation import ConversationStatus, Role
 class AIMessageResponseDTO(BaseModelApp):
     content: str
     related_properties: List[Property] = Field(default_factory=list)
-    best_property_id: Optional[Property] = None
+    best_property: Optional[Property] = None
     role: Role = Role.ASSISTANT
 
 

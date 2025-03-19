@@ -27,5 +27,7 @@
     "statusBar.debuggingBorder": "#ff8000",
     "statusBar.debuggingForeground": "#15202b"
   },
-  "peacock.color": "#007fff"
+  "peacock.color": "#007fff",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "strict"
 }

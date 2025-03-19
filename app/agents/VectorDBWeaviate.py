@@ -4,7 +4,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 import weaviate.classes as wvc
-from httpx import Auth
+
+from weaviate.classes.init import Auth
 from langchain.vectorstores import weaviate
 from langsmith.schemas import DataType
 from weaviate.collections.classes.config import Configure

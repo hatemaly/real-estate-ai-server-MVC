@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@yourapp.com"
     SENDGRID_API_KEY: str = "default_sendgrid_api_key"
 
-
     # Additional fields from your errors
     project_name: str
     version: str
@@ -46,12 +45,18 @@ class Settings(BaseSettings):
     cache_expiration: int
     log_level: str
 
-    supabase_url:str
-    supabase_key:str
+    supabase_url: str
+    supabase_key: str
 
+    GEMINI_API_KEY: str
+    ADMIN_KEY: str
 
     class Config:
         env_file = ".env"
 
 
-settings = Settings()
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()
