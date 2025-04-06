@@ -1,7 +1,7 @@
 # app/controllers/project_controller.py
 from typing import List
 from app.services.project_service import ProjectService
-from app.models.developer_models.project import Project
+from app.models.project_models.project import Project
 
 
 class ProjectController:

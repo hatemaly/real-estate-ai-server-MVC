@@ -13,10 +13,6 @@ from app.services.appointment_service import AppointmentService
 from app.models.user_models.user import User
 from app.models.user_models.appointment_request import AppointmentType, RequestStatus
 
-# نفترض أن لديك property_service, user_service(للبروكر أيضاً), إلخ...
-# مثلاً:
-# from app.services.property_service import PropertyService
-
 router = APIRouter()
 
 
@@ -62,7 +58,7 @@ async def get_appointments(
         page: int = 1,
         limit: int = 10,
         appointment_controller: AppointmentController = Depends(get_appointment_controller),
-        current_user_id: str = Depends(...),  # تحتاج لآلية لاستخراج user_id من الـJWT
+        current_user_id: str = Depends(...),
 ):
     """
     GET /api/v1/users/me/appointments?appointment_type=?&status=?&page=?&limit=?

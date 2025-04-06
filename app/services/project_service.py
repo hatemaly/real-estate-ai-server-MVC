@@ -1,6 +1,6 @@
 # src/services/project_service.py
 from typing import List, Optional
-from app.models.developer_models.project import Project
+from app.models.project_models.project import Project
 from app.repositories.project_repository import ProjectRepository
 
 

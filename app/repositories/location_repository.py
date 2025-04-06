@@ -1,4 +1,6 @@
 # src/repositories/location_repository.py
+from bson import ObjectId
+from bson.errors import InvalidId
 from pymongo.collection import Collection
 from typing import List
 
@@ -12,6 +14,15 @@ class LocationRepository(BaseRepository):
         super().__init__(collection, Location)
 
     # Existing methods...
+
+    async def get_locations_by_ids(self, location_ids: List[str]) -> List[Location]:
+        try:
+            cursor = self.collection.find({
+                "_id": {"$in": [ObjectId(lid) for lid in location_ids]}
+            })
+            return [Location(**doc) async for doc in cursor]
+        except InvalidId:
+            return []
 
     async def search_by_name(self, name: str, exact_match: bool = False, page: int = 1, limit: int = 10) -> List[Location]:
         query = {"name": name} if exact_match else {"name": {"$regex": name, "$options": "i"}}

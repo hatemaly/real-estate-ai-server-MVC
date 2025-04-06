@@ -1,6 +1,6 @@
 from pymongo.collection import Collection
 from typing import List, Optional
-from app.models.developer_models.project import Project
+from app.models.project_models.project import Project
 from app.repositories.base_repository import BaseRepository
 
 

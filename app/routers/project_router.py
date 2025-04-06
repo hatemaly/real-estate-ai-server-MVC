@@ -5,7 +5,7 @@ from app.controllers.project_controller import ProjectController
 from app.repositories.project_repository import ProjectRepository
 from app.database.collections import get_project_collection
 from app.services.project_service import ProjectService
-from app.models.developer_models.project import Project
+from app.models.project_models.project import Project
 
 router = APIRouter()
 
