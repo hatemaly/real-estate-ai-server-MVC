@@ -1,6 +1,5 @@
 # src/models/developer_models/base_data.py
 from enum import Enum
-from typing import Optional
 
 from app.models.base_model import BaseModelApp
 
