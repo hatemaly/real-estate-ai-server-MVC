@@ -140,7 +140,7 @@ class MessageFormatExtractionAgent:
             ),
         )
 
-        print(os.getenv("GEMINI_API_KEY"))
+        print(f"{os.getenv("GEMINI_API_KEY") = }")
 
         self.company_context = """
         CBRE Group, Inc. is a global leader in the real estate services and investment industry,
@@ -215,7 +215,7 @@ class MessageFormatExtractionAgent:
             }
 
 
-ret = MessageFormatExtractionAgent().execute(
-    "I am looking to buy a new house in the suburbs with a budget from $500,000 to $1,000,000 with 200m"
-)
-print(ret)
+# ret = MessageFormatExtractionAgent().execute(
+#     "I am looking to buy a new house in the suburbs with a budget from $500,000 to $1,000,000 with 200m"
+# )
+# print(f"{ret = }")
