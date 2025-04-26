@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,21 +11,24 @@ from app.routers.project_router import router as project_router
 from app.routers.developer_router import router as developer_router
 from app.routers.location_router import router as location_router
 
+
+@asynccontextmanager
+async def lifspan_contextmanager(app: FastAPI):
+    await db_session.connect()
+
+    yield
+
+    await db_session.disconnect()
+
+
 app = FastAPI(
     title="AI-Powered Real Estate Brokerage API",
     description="API for managing real estate listings with AI features",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifspan_contextmanager,
 )
 
 # Include event handlers
-@app.on_event("startup")
-async def startup_event():
-    await db_session.connect()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await db_session.disconnect()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,10 +52,12 @@ app.include_router(developer_router, prefix="/developers", tags=["Developers"])
 app.include_router(location_router, prefix="/api/v1/locations", tags=["locations"])
 app.include_router(conversation_router, prefix="/conversations", tags=["Conversations"])
 
+
 # Add endpoints
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 
 @app.get("/hello/{name}")
 async def say_hello(name: str):
